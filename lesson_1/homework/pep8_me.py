@@ -21,8 +21,8 @@ def create_file(file_name, directory, size):
         random.choice(alphanumeric_characters) for _ in range(size_in_bytes)
     )
     file_path = os.path.join(directory, file_name)
-    file_handler = open(file_path, "w")
-    file_handler.write(token)
+    file_handle = open(file_path, "w")
+    file_handle.write(token)
 
 
 if __name__ == "__main__":
