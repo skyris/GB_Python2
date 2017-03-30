@@ -3,14 +3,23 @@ from hashlib import md5
 import os
 
 
-def divide_file(path, size_of_piece):
-    with open(path, "rb") as file_handle:
-        read_block = partial(file_handle.read, size_of_piece)
-        # Read until it reaches the end
-        for piece_number, block in enumerate(iter(read_block, b"")):
-            with open(str(piece_number), "wb") as write_handle:
-                write_handle.write(block)
-        return piece_number
+def divide_file(path, size_of_piece, result_name):
+    with open(result_name, "w") as all_hashes_handle:
+        with open(path, "rb") as file_handle:
+            read_block = partial(file_handle.read, size_of_piece)
+            # Read until it reaches the end
+            for piece_number, block in enumerate(iter(read_block, b"")):
+                with open(str(piece_number), "wb") as write_handle:
+                    write_handle.write(block)
+                    current_hash = count_hash(block)
+                    all_hashes_handle.write(current_hash)
+            return piece_number
+
+
+def count_hash(data):
+    h = md5()
+    h.update(data)
+    return h.hexdigest()
 
 
 def concat_files(directory, result_name):
@@ -23,9 +32,7 @@ def concat_files(directory, result_name):
             ordered_hashes = map(lambda x: x.rstrip("\n"), all_hashes_handle)
         else:
             with open(full_path, "rb") as file_handle:
-                h = md5()
-                h.update(file_handle.read())
-                hash_sum = h.hexdigest()
+                hash_sum = count_hash(file_handle.read())
                 hash_to_file[hash_sum] = full_path
 
     with open(result_name, "wb") as write_handle:
