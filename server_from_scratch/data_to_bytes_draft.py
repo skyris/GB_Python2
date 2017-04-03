@@ -30,6 +30,7 @@
 """
 
 PACKET_HEADER = bytes([122, 122])
+SERVICE_CODE = bytes([0])
 SWITCH_ON = bytes([0])
 SWITCH_OFF = bytes([1])
 REBOOT = bytes([2])
@@ -56,3 +57,5 @@ def bitstring_to_bytes(s):
 
 
 print(bitstring_to_bytes(bitstring_date_time))
+
+
