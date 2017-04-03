@@ -18,7 +18,20 @@ def create_message():
     massage = PACKET_HEADER + encode_datetime()
 
 
+def encode_unixtime(date_time=None):
+    # 4 bytes
+    if not date_time:
+        date_time = datetime.datetime.now()
+    unixtimestamp = int(date_time.timestamp())
+    return (unixtimestamp).to_bytes(4, byteorder='big')
+
+
+def decode_unixtime(data):
+    return datetime.datetime.fromtimestamp(data)
+
+
 def encode_datetime(date_time=None):
+    # 5 bytes
     if not date_time:
         date_time = datetime.datetime.now()
     year = date_time.year - 2000
@@ -37,9 +50,6 @@ def bitstring_to_bytes(s):
         b.append(v & 0xff)
         v >>= 8
     return bytes(b[::-1])
-
-
-print(encode_datetime())
 
 
 def make_service_maintenance(type_of_service):
@@ -61,13 +71,11 @@ def make_encashment(operator_id, summ):
     return PACKET_HEADER + date_time + ENCASHMENT_CODE + transaction_data
 
 
-"""
+message = make_payment_transaction(78, 2001)
+
 print("Client started")
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((HOST, PORT))
-sock.sendall(b"Wow")
+sock.sendall(message)
 sock.close()
 print("the end")
-
-
-"""

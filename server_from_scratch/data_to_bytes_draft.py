@@ -29,6 +29,8 @@
                     * 8 байт: сумма инкассации в копейках
 """
 
+import datetime
+
 PACKET_HEADER = bytes([122, 122])
 SERVICE_CODE = bytes([0])
 SWITCH_ON = bytes([0])
@@ -58,4 +60,25 @@ def bitstring_to_bytes(s):
 
 print(bitstring_to_bytes(bitstring_date_time))
 
+# for 5 bytes version---------------------------------------------
+bytestrint = b'zz"\x83\x013i\x01N\x00\x00\x00\x00\x00\x00\x07\xd1'
+if bytestrint[:2] == b"zz":
+    bin_date = "".join(bin(byte)[2:].zfill(8) for byte in bytestrint[2:4])
+    bin_time = "".join(bin(byte)[2:].zfill(8) for byte in bytestrint[4:7])
+    year = int(bin_date[:7], 2)
+    mounth = int(bin_date[7:11], 2)
+    day = int(bin_date[11:], 2)
+    seconds_since_midnight = int(bin_time, 2)
+# -----------------------------------------------------------------
 
+
+# for 4 bytes version---------------------------------------------
+bytestrint = b''
+
+
+def get_time_from_bytes(utime):
+    if bytestrint[:2] == b"zz":
+        unixtime = int("".join(bin(byte)[2:].zfill(8) for byte in utime), 2)
+        return datetime.datetime.fromtimestamp(unixtime)
+
+# -----------------------------------------------------------------
