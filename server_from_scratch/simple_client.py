@@ -1,33 +1,118 @@
+import json
 import socket
+import struct
 import datetime
 
-PACKET_HEADER = bytes([122, 122])
-SERVICE_MAINTENANCE = bytes([0])
-SWITCH_ON_CODE = bytes([0])
-SWITCH_OFF_CODE = bytes([1])
-REBOOT_CODE = bytes([2])
-SENSOR_ACTIVATION_CODE = bytes([3])
-ENCASHMENT_BLOCK_CODE = bytes([4])
-PAYMENT_TRANSACTION_CODE = bytes([1])
-ENCASHMENT_CODE = bytes([2])
+TERMINAL_ID = None
+PACKET_HEADER = b'zz'
+SERVICE_MAINTENANCE = b'\x00'
+SWITCH_ON_CODE = b'\x00'
+SWITCH_OFF_CODE = b'\x01'
+REBOOT_CODE = b'\x02'
+SENSOR_ACTIVATION_CODE = b'\x03'
+ENCASHMENT_BLOCK_CODE = b'\x04'
+PAYMENT_TRANSACTION_CODE = b'\x01'
+ENCASHMENT_CODE = b'\x02'
 
 HOST, PORT = 'localhost', 9999
 
+transaction_id = None
+conf = {}
 
-def create_message():
-    massage = PACKET_HEADER + encode_datetime()
+
+def load_config(path):
+    with open(path) as handle:
+        global conf
+        config = json.load(handle)
+        if not conf:
+            conf = config
+        global TERMINAL_ID
+        if not TERMINAL_ID:
+            TERMINAL_ID = config["terminal_id"]
+        global transaction_id
+        if not transaction_id:
+            transaction_id = config["last_transaction_id"]
+        print("config loaded")
+
+
+def save_data_to_config(path):
+    with open(path, "w") as handle:
+        global conf
+        global transaction_id
+        conf["last_transaction_id"] = transaction_id
+        json.dump(conf, handle)
+
+
+def handle_event(event):
+    if event[0] == "service":
+        binary_data = make_service_maintenance(event)
+    elif event[0] == "transaction":
+        binary_data = make_payment_transaction(event)
+    elif event[0] == "encashment":
+        binary_data = make_encashment(event)
+    else:
+        raise ValueError("unrecognized event")
+    message = create_message(binary_data)
+    return message
+
+
+def make_service_maintenance(event):
+    if event[1] == "switch_on":
+        suffix = SWITCH_ON_CODE
+    elif event[1] == "switch_off":
+        suffix = SWITCH_OFF_CODE
+    elif event[1] == "reboot":
+        suffix = REBOOT_CODE
+    elif event[1] == "encashment_block":
+        suffix = ENCASHMENT_BLOCK_CODE
+    elif event[1] == "sensor":
+        if event[2] == 1:
+            suffix = SENSOR_ACTIVATION_CODE + b'\x01'
+        elif event[2] == 2:
+            suffix = SENSOR_ACTIVATION_CODE + b'\x02'
+        else:
+            raise ValueError("unrecognized sensor")
+    else:
+        raise ValueError("unrecognized subevent")
+    return SERVICE_MAINTENANCE + suffix
+
+
+def make_payment_transaction(event):
+    # Encode organization id and money in kopecks to bytes
+    return struct.pack(">lq", event[1], event[2])
+
+
+def make_encashment(event):
+    # Encode encashment id and money in kopecks to bytes
+    return struct.pack(">lq", event[1], event[2])
+
+
+def create_message(transaction_data_b):
+    global TERMINAL_ID
+    global transaction_id
+    transaction_id += 1
+    term_and_trans_ids_b = struct.pack(">hl", TERMINAL_ID, transaction_id)
+    time_b = encode_unixtime()
+    pack_len_b = struct.pack(">h", len(time_b + term_and_trans_ids_b + transaction_data_b))
+    print(PACKET_HEADER + pack_len_b + time_b + term_and_trans_ids_b + transaction_data_b)
+    return PACKET_HEADER + pack_len_b + time_b + term_and_trans_ids_b + transaction_data_b
 
 
 def encode_unixtime(date_time=None):
     # 4 bytes
     if not date_time:
         date_time = datetime.datetime.now()
-    unixtimestamp = int(date_time.timestamp())
-    return (unixtimestamp).to_bytes(4, byteorder='big')
+    unixtimestamp = struct.pack(">l", int(date_time.timestamp()))
+    return unixtimestamp
 
 
 def decode_unixtime(data):
     return datetime.datetime.fromtimestamp(data)
+
+
+"""
+def encode_transaction():
+    return b""
 
 
 def encode_datetime(date_time=None):
@@ -52,30 +137,33 @@ def bitstring_to_bytes(s):
     return bytes(b[::-1])
 
 
-def make_service_maintenance(type_of_service):
+def _make_service_maintenance(type_of_service):
     date_time = encode_datetime()
     return PACKET_HEADER + date_time + PAYMENT_TRANSACTION_CODE + type_of_service
 
 
-def make_payment_transaction(organisation_id, summ):
+def _make_payment_transaction(organisation_id, summ):
     date_time = encode_datetime()
     bitstring = "{0:032b}{1:064b}".format(organisation_id, summ)
     transaction_data = bitstring_to_bytes(bitstring)
     return PACKET_HEADER + date_time + PAYMENT_TRANSACTION_CODE + transaction_data
 
 
-def make_encashment(operator_id, summ):
+def _make_encashment(operator_id, summ):
     date_time = encode_datetime()
     bitstring = "{0:032b}{1:064b}".format(operator_id, summ)
     transaction_data = bitstring_to_bytes(bitstring)
     return PACKET_HEADER + date_time + ENCASHMENT_CODE + transaction_data
 
 
-message = make_payment_transaction(78, 2001)
+"""
 
-print("Client started")
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect((HOST, PORT))
-sock.sendall(message)
-sock.close()
-print("the end")
+
+def connect(message):
+    global HOST, PORT
+    print("Client started")
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((HOST, PORT))
+    sock.sendall(message)
+    sock.close()
+    print("Closed")
