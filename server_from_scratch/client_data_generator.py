@@ -39,62 +39,30 @@ data_samples = [
     ("service", "sensor", 1),
     ("service", "sensor", 2),
     ("service", "encashment_block"),
-    ("transaction", 777, 200),
-    ("transaction", 500, 300),
-    ("transaction", 444, 150),
-    ("transaction", 200, 500),
-    ("transaction", 300, 400),
-    ("transaction", 111, 500),
-    ("transaction", 659, 200),
-    ("transaction", 888, 100),
-    ("transaction", 545, 200),
-    ("transaction", 222, 300),
-    ("transaction", 333, 400),
-    ("transaction", 777, 150),
-    ("transaction", 500, 100),
-    ("transaction", 444, 250),
-    ("transaction", 200, 200),
-    ("transaction", 300, 100),
-    ("transaction", 111, 300),
-    ("transaction", 659, 400),
-    ("transaction", 888, 300),
-    ("transaction", 545, 300),
-    ("transaction", 222, 350),
-    ("transaction", 333, 250),
-    ("transaction", 777, 200),
-    ("transaction", 500, 300),
-    ("transaction", 444, 150),
-    ("transaction", 200, 500),
-    ("transaction", 300, 400),
-    ("transaction", 111, 500),
-    ("transaction", 659, 200),
-    ("transaction", 888, 100),
-    ("transaction", 545, 200),
-    ("transaction", 222, 300),
-    ("transaction", 333, 400),
-    ("transaction", 777, 150),
-    ("transaction", 500, 100),
-    ("transaction", 444, 250),
-    ("transaction", 200, 200),
-    ("transaction", 300, 100),
-    ("transaction", 111, 300),
-    ("transaction", 659, 400),
-    ("transaction", 888, 300),
-    ("transaction", 545, 300),
-    ("transaction", 222, 350),
-    ("transaction", 333, 250),
+    ('transaction', 555, 200), ('transaction', 444, 300), ('transaction', 333, 150), ('transaction', 555, 500),
+    ('transaction', 333, 400), ('transaction', 444, 500), ('transaction', 555, 200), ('transaction', 222, 100),
+    ('transaction', 333, 200), ('transaction', 222, 300), ('transaction', 333, 400), ('transaction', 555, 150),
+    ('transaction', 222, 100), ('transaction', 222, 250), ('transaction', 333, 200), ('transaction', 111, 100),
+    ('transaction', 444, 300), ('transaction', 333, 400), ('transaction', 222, 300), ('transaction', 444, 300),
+    ('transaction', 222, 350), ('transaction', 111, 250), ('transaction', 444, 200), ('transaction', 444, 300),
+    ('transaction', 222, 150), ('transaction', 333, 500), ('transaction', 111, 400), ('transaction', 222, 500),
+    ('transaction', 333, 200), ('transaction', 111, 100), ('transaction', 555, 200), ('transaction', 555, 300),
+    ('transaction', 111, 400), ('transaction', 444, 150), ('transaction', 111, 100), ('transaction', 222, 250),
+    ('transaction', 555, 200), ('transaction', 555, 100), ('transaction', 222, 300), ('transaction', 111, 400),
+    ('transaction', 222, 300), ('transaction', 555, 300), ('transaction', 222, 350), ('transaction', 333, 250),
     ("encashment", 60, 150000),
 
 ]
 
 path = "terminal_config.json"
-load_config(path)
+config = Config(path)
+config.load()
 x = 0
 while x < 50:
     time.sleep(random.random() * 1)
     current_event = random.choice(data_samples)
     print(current_event)
-    mes = handle_event(current_event)
-    connect(mes)
-
+    message_ = handle_event(current_event, config)
+    connect(message_)
+    config.save()
     x += 1

@@ -3,7 +3,6 @@ import socket
 import struct
 import datetime
 
-TERMINAL_ID = None
 PACKET_HEADER = b'zz'
 SERVICE_MAINTENANCE = b'\x00'
 SWITCH_ON_CODE = b'\x00'
@@ -16,34 +15,27 @@ ENCASHMENT_CODE = b'\x02'
 
 HOST, PORT = 'localhost', 9999
 
-transaction_id = None
-conf = {}
+
+class Config():
+    def __init__(self, path):
+        self._path = path
+
+    def load(self):
+        with open(self._path) as handle:
+            config_dict = json.load(handle)
+            for name, val in config_dict.items():
+                setattr(self, name, val)
+            print("config loaded")
+
+    def save(self):
+        with open(self._path, "w") as handle:
+            config_dict = dict(self.__dict__)
+            config_dict.pop("_path", None)
+            json.dump(config_dict, handle, sort_keys=True, indent=4)
+        print("config saved")
 
 
-def load_config(path):
-    with open(path) as handle:
-        global conf
-        config = json.load(handle)
-        if not conf:
-            conf = config
-        global TERMINAL_ID
-        if not TERMINAL_ID:
-            TERMINAL_ID = config["terminal_id"]
-        global transaction_id
-        if not transaction_id:
-            transaction_id = config["last_transaction_id"]
-        print("config loaded")
-
-
-def save_data_to_config(path):
-    with open(path, "w") as handle:
-        global conf
-        global transaction_id
-        conf["last_transaction_id"] = transaction_id
-        json.dump(conf, handle)
-
-
-def handle_event(event):
+def handle_event(event, config):
     if event[0] == "service":
         binary_data = make_service_maintenance(event)
     elif event[0] == "transaction":
@@ -52,7 +44,7 @@ def handle_event(event):
         binary_data = make_encashment(event)
     else:
         raise ValueError("unrecognized event")
-    message = create_message(binary_data)
+    message = create_message(binary_data, config)
     return message
 
 
@@ -73,25 +65,23 @@ def make_service_maintenance(event):
         else:
             raise ValueError("unrecognized sensor")
     else:
-        raise ValueError("unrecognized subevent")
+        raise ValueError("unrecognized sub event")
     return SERVICE_MAINTENANCE + suffix
 
 
 def make_payment_transaction(event):
     # Encode organization id and money in kopecks to bytes
-    return struct.pack(">lq", event[1], event[2])
+    return PAYMENT_TRANSACTION_CODE + struct.pack(">lq", event[1], event[2])
 
 
 def make_encashment(event):
     # Encode encashment id and money in kopecks to bytes
-    return struct.pack(">lq", event[1], event[2])
+    return ENCASHMENT_CODE + struct.pack(">lq", event[1], event[2])
 
 
-def create_message(transaction_data_b):
-    global TERMINAL_ID
-    global transaction_id
-    transaction_id += 1
-    term_and_trans_ids_b = struct.pack(">hl", TERMINAL_ID, transaction_id)
+def create_message(transaction_data_b, configuration):
+    configuration.transaction_id += 1
+    term_and_trans_ids_b = struct.pack(">hl", configuration.terminal_id, configuration.transaction_id)
     time_b = encode_unixtime()
     pack_len_b = struct.pack(">h", len(time_b + term_and_trans_ids_b + transaction_data_b))
     print(PACKET_HEADER + pack_len_b + time_b + term_and_trans_ids_b + transaction_data_b)
@@ -108,6 +98,16 @@ def encode_unixtime(date_time=None):
 
 def decode_unixtime(data):
     return datetime.datetime.fromtimestamp(data)
+
+
+def connect(message):
+    global HOST, PORT
+    print("Client started")
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((HOST, PORT))
+    sock.sendall(message)
+    sock.close()
+    print("Closed")
 
 
 """
@@ -157,13 +157,3 @@ def _make_encashment(operator_id, summ):
 
 
 """
-
-
-def connect(message):
-    global HOST, PORT
-    print("Client started")
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((HOST, PORT))
-    sock.sendall(message)
-    sock.close()
-    print("Closed")
