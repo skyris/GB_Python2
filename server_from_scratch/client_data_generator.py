@@ -33,25 +33,24 @@ from simple_client import *
                     * 8 байт: сумма инкассации в копейках
 """
 data_samples = [
-    ("service", "switch_on"),
-    ("service", "switch_off"),
-    ("service", "reboot"),
-    ("service", "sensor", 1),
-    ("service", "sensor", 2),
-    ("service", "encashment_block"),
-    ('transaction', 555, 200), ('transaction', 444, 300), ('transaction', 333, 150), ('transaction', 555, 500),
-    ('transaction', 333, 400), ('transaction', 444, 500), ('transaction', 555, 200), ('transaction', 222, 100),
-    ('transaction', 333, 200), ('transaction', 222, 300), ('transaction', 333, 400), ('transaction', 555, 150),
-    ('transaction', 222, 100), ('transaction', 222, 250), ('transaction', 333, 200), ('transaction', 111, 100),
-    ('transaction', 444, 300), ('transaction', 333, 400), ('transaction', 222, 300), ('transaction', 444, 300),
-    ('transaction', 222, 350), ('transaction', 111, 250), ('transaction', 444, 200), ('transaction', 444, 300),
-    ('transaction', 222, 150), ('transaction', 333, 500), ('transaction', 111, 400), ('transaction', 222, 500),
-    ('transaction', 333, 200), ('transaction', 111, 100), ('transaction', 555, 200), ('transaction', 555, 300),
-    ('transaction', 111, 400), ('transaction', 444, 150), ('transaction', 111, 100), ('transaction', 222, 250),
-    ('transaction', 555, 200), ('transaction', 555, 100), ('transaction', 222, 300), ('transaction', 111, 400),
-    ('transaction', 222, 300), ('transaction', 555, 300), ('transaction', 222, 350), ('transaction', 333, 250),
-    ("encashment", 60, 150000),
-
+    # ("service", "switch_on"),
+    # ("service", "switch_off"),
+    # ("service", "reboot"),
+    # ("service", "sensor", 1),
+    # ("service", "sensor", 2),
+    # ("service", "encashment_block"),
+    # ('transaction', 555, 200), ('transaction', 444, 300), ('transaction', 333, 150), ('transaction', 555, 500),
+    # ('transaction', 333, 400), ('transaction', 444, 500), ('transaction', 555, 200), ('transaction', 222, 100),
+    # ('transaction', 333, 200), ('transaction', 222, 300), ('transaction', 333, 400), ('transaction', 555, 150),
+    # ('transaction', 222, 100), ('transaction', 222, 250), ('transaction', 333, 200), ('transaction', 111, 100),
+    # ('transaction', 444, 300), ('transaction', 333, 400), ('transaction', 222, 300), ('transaction', 444, 300),
+    # ('transaction', 222, 350), ('transaction', 111, 250), ('transaction', 444, 200), ('transaction', 444, 300),
+    # ('transaction', 222, 150), ('transaction', 333, 500), ('transaction', 111, 400), ('transaction', 222, 500),
+    # ('transaction', 333, 200), ('transaction', 111, 100), ('transaction', 555, 200), ('transaction', 555, 300),
+    # ('transaction', 111, 400), ('transaction', 444, 150), ('transaction', 111, 100), ('transaction', 222, 250),
+    # ('transaction', 555, 200), ('transaction', 555, 100), ('transaction', 222, 300), ('transaction', 111, 400),
+    # ('transaction', 222, 300), ('transaction', 555, 300), ('transaction', 222, 350), ('transaction', 333, 250),
+    ("encashment", 60, 150000)
 ]
 
 path = "terminal_config.json"

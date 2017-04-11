@@ -38,14 +38,19 @@ class RequestHandler(socketserver.BaseRequestHandler):
         self.date_time = datetime.datetime.fromtimestamp(unixtime)
         if transaction_type == SERVICE_MAINTENANCE:
             event_text = self.parse_service_message()
-            db.add_service(db.session, self.date_time, self.terminal_id, self.transaction_id, event_text)
+            data_dict = dict(date_time=self.date_time, terminal_id=self.terminal_id,
+                             transaction_id=self.transaction_id, event_type=event_text)
+            db.insert_into_table(db.services, **data_dict)
         elif transaction_type == PAYMENT_TRANSACTION_CODE:
             partner_id, summ = struct.unpack(">lq", self.data[15:])
-            db.add_payment(db.session, self.date_time, self.terminal_id, self.transaction_id, partner_id, summ)
-
+            data_dict = dict(date_time=self.date_time, terminal_id=self.terminal_id,
+                             transaction_id=self.transaction_id, partner_id=partner_id, summ=summ)
+            db.insert_into_table(db.payments, **data_dict)
         elif transaction_type == ENCASHMENT_CODE:
             accumulator_id, summ = struct.unpack(">lq", self.data[15:])
-            db.add_encashment(db.session, self.date_time, self.terminal_id, self.transaction_id, accumulator_id, summ)
+            data_dict = dict(date_time=self.date_time, terminal_id=self.terminal_id,
+                             transaction_id=self.transaction_id, accumulator_id=accumulator_id, summ=summ)
+            db.insert_into_table(db.encashments, **data_dict)
         else:
             raise ValueError("unrecognized transaction code")
 
@@ -70,7 +75,9 @@ class RequestHandler(socketserver.BaseRequestHandler):
 def write_to_log(data):
     pass
 
-
-with TCPserver((HOST, PORT), RequestHandler) as server:
+try:
+    server = TCPserver((HOST, PORT), RequestHandler)
     print("Server started")
     server.serve_forever()
+except KeyboardInterrupt:  # control-C
+    print("exit")
