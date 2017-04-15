@@ -1,6 +1,6 @@
 import datetime
 import operator as op
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Table, MetaData, Column, Integer, String, Sequence, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import sessionmaker, backref, relationship
@@ -33,10 +33,17 @@ partners = Table("partners", metadata,
                  Column("comment", String(150))
                  )
 
+terminals = Table("terminals", metadata,
+                  Column("terminal_id", Integer, primary_key=True, unique=True),
+                  Column("title", String(50)),
+                  Column("comment", String(150)),
+                  Column("pub_key", String(300))
+                  )
+
 payments = Table("payments", metadata,
                  Column("id", Integer, primary_key=True, unique=True, autoincrement=True),
                  Column("date_time", DateTime),
-                 Column("terminal_id", Integer),
+                 Column("terminal_id", Integer, ForeignKey(terminals.columns.terminal_id), nullable=False),
                  Column("transaction_id", Integer),
                  Column("partner_id", Integer, ForeignKey(partners.columns.partner_id), nullable=False),
                  Column("summ", Integer)
@@ -46,7 +53,7 @@ payments = Table("payments", metadata,
 services = Table("services", metadata,
                  Column("id", Integer, primary_key=True, unique=True, autoincrement=True),
                  Column("date_time", DateTime),
-                 Column("terminal_id", Integer),
+                 Column("terminal_id", Integer, ForeignKey(terminals.columns.terminal_id), nullable=False),
                  Column("transaction_id", Integer),
                  Column("event_type", String(50))
                  )
@@ -54,7 +61,7 @@ services = Table("services", metadata,
 encashments = Table("encashments", metadata,
                     Column("id", Integer, primary_key=True, unique=True, autoincrement=True),
                     Column("date_time", DateTime),
-                    Column("terminal_id", Integer),
+                    Column("terminal_id", Integer, ForeignKey(terminals.columns.terminal_id), nullable=False),
                     Column("transaction_id", Integer),
                     Column("accumulator_id", Integer),
                     Column("summ", Integer)
@@ -112,6 +119,15 @@ def select_date_period(id, start_date, end_date):
     s = select([payments]).where(and_(col == id, payments.c.date_time.between(start_date, end_date)))
     conn = engine.connect()
     return conn.execute(s)
+
+
+def select_partners_period(start_date, end_date):
+    s = select([payments.c.partner_id, func.count(payments.c.summ)]).\
+        group_by(payments.c.partner_id).where(payments.c.date_time.between(start_date, end_date))
+    conn = engine.connect()
+    return conn.execute(s)
+
+
 
 if __name__ == "__main__":
     pass
