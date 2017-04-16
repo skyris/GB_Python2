@@ -109,7 +109,7 @@ def delete_eq(table, column, value):
 
 def select_eq(table, column, value):
     col = getattr(getattr(table, "c"), column)
-    s = select([table]).where(col < value)
+    s = select([table]).where(col = value)
     conn = engine.connect()
     return conn.execute(s)
 
