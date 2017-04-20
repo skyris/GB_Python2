@@ -1,7 +1,7 @@
 import datetime
 import socketserver
 import struct
-import server_data_base as db
+import db
 
 HOST, PORT = 'localhost', 9999
 PACKET_HEADER = b'zz'
@@ -38,19 +38,16 @@ class RequestHandler(socketserver.BaseRequestHandler):
         self.date_time = datetime.datetime.fromtimestamp(unixtime)
         if transaction_type == SERVICE_MAINTENANCE:
             event_text = self.parse_service_message()
-            data_dict = dict(date_time=self.date_time, terminal_id=self.terminal_id,
-                             transaction_id=self.transaction_id, event_type=event_text)
-            db.insert_into_table(db.services, **data_dict)
+            db.add_service(date_time=self.date_time, terminal_id=self.terminal_id,
+                           transaction_id=self.transaction_id, event_type=event_text)
         elif transaction_type == PAYMENT_TRANSACTION_CODE:
             partner_id, summ = struct.unpack(">lq", self.data[15:])
-            data_dict = dict(date_time=self.date_time, terminal_id=self.terminal_id,
-                             transaction_id=self.transaction_id, partner_id=partner_id, summ=summ)
-            db.insert_into_table(db.payments, **data_dict)
+            db.add_payment(date_time=self.date_time, terminal_id=self.terminal_id,
+                           transaction_id=self.transaction_id, partner_id=partner_id, summ=summ)
         elif transaction_type == ENCASHMENT_CODE:
             accumulator_id, summ = struct.unpack(">lq", self.data[15:])
-            data_dict = dict(date_time=self.date_time, terminal_id=self.terminal_id,
-                             transaction_id=self.transaction_id, accumulator_id=accumulator_id, summ=summ)
-            db.insert_into_table(db.encashments, **data_dict)
+            db.add_encashment(date_time=self.date_time, terminal_id=self.terminal_id,
+                              transaction_id=self.transaction_id, accumulator_id=accumulator_id, summ=summ)
         else:
             raise ValueError("unrecognized transaction code")
 
@@ -74,6 +71,7 @@ class RequestHandler(socketserver.BaseRequestHandler):
 
 def write_to_log(data):
     pass
+
 
 try:
     server = TCPserver((HOST, PORT), RequestHandler)

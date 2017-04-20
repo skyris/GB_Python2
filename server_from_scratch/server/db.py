@@ -1,6 +1,8 @@
 from sqlalchemy import create_engine
+from sqlalchemy.exc import IntegrityError
 from models.meta import Base, Session
 from models.tables import Partner, Terminal, Payment, Service, Encashment
+import functools
 
 """
  2.а. Реализовать возможность создания структуры БД
@@ -21,56 +23,80 @@ engine = create_engine('sqlite:///preprocessing.db', echo=True)
 Session.configure(bind=engine)
 session = Session()
 Base.metadata.create_all(engine)
+
+
 # log.info("Successfully setup")
 
 
-def session_decorator(foo):
-    def inner(*args, **kwargs):
-        new_row = foo()
-        session.add(new_row)
-        session.commit()
-        session.flush()
 
-    return inner
+def session_decorator(model, session=session):
+    """ decorator = session_decorator(Partner)
+        add_partner = decorator(add_partner)"""
+    def decorator(func):
+        @functools.wraps(func)
+        def inner(**kwargs):
+            new_row = model(**kwargs)
+            session.add(new_row)
+            session.commit()
 
+        return inner
 
-def add_partner(session_, partner_id, title, comment=""):
-    new_row = Partner(partner_id=partner_id, title=title, comment=comment)
-    session_.add(new_row)
-    session_.commit()
-
-
-def add_service(session_, date_time, terminal_id, transaction_id, event_type):
-    new_row = Service(date_time=date_time, terminal_id=terminal_id, transaction_id=transaction_id,
-                      event_type=event_type)
-    session_.add(new_row)
-    session_.commit()
+    return decorator
 
 
-def add_payment(session_, date_time, terminal_id, transaction_id, partner_id, summ):
-    new_row = Payment(date_time=date_time, terminal_id=terminal_id, transaction_id=transaction_id,
-                      partner_id=partner_id,
-                      summ=summ)
-    session_.add(new_row)
-    session_.commit()
+@session_decorator(Partner)
+def add_partner(**kwargs):
+    pass
 
 
-def add_encashment(session_, date_time, terminal_id, transaction_id, accumulator_id, summ):
-    new_row = Encashment(date_time=date_time, terminal_id=terminal_id, transaction_id=transaction_id,
-                         accumulator_id=accumulator_id, summ=summ)
-    session_.add(new_row)
-    session_.commit()
+@session_decorator(Terminal)
+def add_terminal(**kwargs):
+    pass
+
+
+@session_decorator(Service)
+def add_service(**kwargs):
+    pass
+
+
+@session_decorator(Payment)
+def add_payment(**kwargs):
+    pass
+
+
+@session_decorator(Encashment)
+def add_encashment(**kwargs):
+    pass
+
+
+# add_partner(dict(partner_id=123, title="Рост", comment="труба"))
+
+"""
+def insert_into_table(table, **kwargs):
+    ins = getattr(table, "insert")
+    insert = ins().values(**kwargs)
+    conn = engine.connect()
+    conn.execute(insert)
+"""
+
+
+def insert_into_table(session_, **kwargs):
+    pass
 
 
 def start():
-    add_partner(session, partner_id=111, title="MTS", comment="Яйца")
-    add_partner(session, partner_id=222, title="MegaFon", comment="NWGSM")
-    add_partner(session, partner_id=333, title="Tele 2", comment="Шведы")
-    add_partner(session, partner_id=444, title="Yota", comment="Поверх Мегафона")
-    add_partner(session, partner_id=555, title="BeeLine", comment="Пчелайн")
+    add_partner(partner_id=111, title="MTS", comment="Яйца")
+    add_partner(partner_id=222, title="MegaFon", comment="NWGSM")
+    add_partner(partner_id=333, title="Tele 2", comment="Шведы")
+    add_partner(partner_id=444, title="Yota", comment="Поверх Мегафона")
+    add_partner(partner_id=555, title="BeeLine", comment="Пчелайн")
 
+#
+# try:
+#     start()
+# except IntegrityError:
+#     pass
 
-# start()
 
 def search_partners_transaction(session_, model, start_date, end_date):
     query_result = session_.query(model.partner_id, model.summ). \
@@ -89,4 +115,12 @@ def search(session_, model, partner_id):
     return query_result
 
 
-print(search(session, Partner, 111))
+def delete_row(session_, model, column, value):
+    session_.query(model).filter(getattr(model, column) == value).delete()
+    session_.commit()
+
+# delete_row(session, Partner, "partner_id", 333)
+
+
+
+# print(search(session, Partner, 111))
